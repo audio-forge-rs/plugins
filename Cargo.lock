@@ -413,6 +413,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "audio-forge-twang-machine"
+version = "0.1.0"
+dependencies = [
+ "atomic_float 1.1.0",
+ "nih_plug",
+ "nih_plug_vizia",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
