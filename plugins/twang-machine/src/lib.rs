@@ -118,8 +118,8 @@ impl Default for TwangMachineParams {
             
             strum_speed: FloatParam::new(
                 "Strum Speed",
-                20.0,  // ms between notes
-                FloatRange::Linear { min: 5.0, max: 100.0 },
+                60.0,  // ms between notes (default: natural strum)
+                FloatRange::Linear { min: 20.0, max: 150.0 },
             )
             .with_unit(" ms")
             .with_value_to_string(formatters::v2s_f32_rounded(1)),
