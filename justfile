@@ -15,11 +15,18 @@ build-release:
 
 # Build and bundle all plugins (uses nih-plug's bundler)
 bundle:
-    cargo xtask bundle
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for plugin in plugins/*/; do
+        plugin_name=$(basename "$plugin")
+        echo "Bundling $plugin_name..."
+        cargo run --package xtask --release -- bundle audio-forge-$plugin_name --release
+    done
+    echo "✓ All plugins bundled to target/bundled/"
 
 # Build and bundle a specific plugin
 bundle-plugin plugin:
-    cargo xtask bundle-plugin {{plugin}}
+    cargo run --package xtask --release -- bundle audio-forge-{{plugin}} --release
 
 # Run tests for all plugins
 test:

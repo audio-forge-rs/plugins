@@ -24,6 +24,7 @@ Our plugins are built using:
 
 This is a monorepo containing multiple plugins:
 
+- **[Tube Screamer](plugins/tubescreamer/)** - Professional emulation of the classic TS808/TS9 overdrive pedal with authentic circuit modeling
 - **Gain** - Simple gain/volume utility plugin (example/template)
 
 More plugins coming soon!
