@@ -404,6 +404,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "audio-forge-low-rider"
+version = "0.1.0"
+dependencies = [
+ "atomic_float 1.1.0",
+ "nih_plug",
+ "nih_plug_vizia",
+]
+
+[[package]]
 name = "audio-forge-tubescreamer"
 version = "0.1.0"
 dependencies = [
