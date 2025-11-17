@@ -1,0 +1,115 @@
+/* Gospel Wheels - Vintage Organ Aesthetic */
+/* Burgundy, gold, cream, dark wood colors */
+
+* {
+    font-family: "Roboto", sans-serif;
+    color: rgb(245, 245, 220); /* Cream text */
+}
+
+.container {
+    background-color: rgb(40, 20, 20); /* Dark burgundy/wood */
+    padding: 20px;
+}
+
+.header {
+    background-color: rgb(60, 20, 20); /* Burgundy */
+    padding: 15px 20px;
+    border-radius: 8px;
+    border-bottom: 2px solid rgb(212, 175, 55); /* Gold accent */
+}
+
+.plugin-title {
+    font-weight: 800;
+    letter-spacing: 3px;
+}
+
+.subtitle {
+    font-style: italic;
+    margin-left: auto;
+}
+
+.main-controls {
+    padding: 20px 0;
+}
+
+.column {
+    padding: 15px;
+    background-color: rgb(50, 25, 25); /* Slightly lighter wood */
+    border-radius: 6px;
+    border: 1px solid rgb(80, 40, 40);
+}
+
+.section-label {
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+.param-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: rgb(212, 175, 55); /* Gold */
+    margin-bottom: 5px;
+}
+
+.param-slider {
+    height: 30px;
+    background-color: rgb(30, 15, 15); /* Very dark */
+    border: 1px solid rgb(212, 175, 55); /* Gold border */
+    border-radius: 4px;
+}
+
+.param-slider .slider__active {
+    background-color: rgb(212, 175, 55); /* Gold fill */
+}
+
+.style-selector {
+    height: 40px;
+    background-color: rgb(212, 175, 55); /* Gold */
+    color: rgb(40, 20, 20); /* Dark text on gold */
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.style-selector:hover {
+    background-color: rgb(232, 195, 75); /* Lighter gold on hover */
+}
+
+.toggle-button {
+    height: 35px;
+    background-color: rgb(80, 40, 40);
+    border: 2px solid rgb(212, 175, 55);
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.toggle-button:checked {
+    background-color: rgb(212, 175, 55);
+    color: rgb(40, 20, 20);
+}
+
+.info-box {
+    padding: 15px;
+    background-color: rgb(30, 15, 15);
+    border-radius: 6px;
+    border-left: 3px solid rgb(212, 175, 55);
+}
+
+.info-text {
+    font-weight: 500;
+}
+
+.footer {
+    background-color: rgb(60, 20, 20); /* Burgundy */
+    padding: 10px 20px;
+    border-radius: 8px;
+    border-top: 2px solid rgb(212, 175, 55);
+}
+
+.footer-text {
+    font-weight: 400;
+    text-align: center;
+}
