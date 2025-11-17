@@ -22,20 +22,29 @@ Our plugins are built using:
 
 ## Plugins
 
-_(Plugins will be listed here as they are developed)_
+This is a monorepo containing multiple plugins:
+
+- **Gain** - Simple gain/volume utility plugin (example/template)
+
+More plugins coming soon!
 
 ## Getting Started
 
 ### For Users
-1. Download the latest release from individual plugin repositories
-2. Copy the `.vst3` or `.clap` file to your plugin directory
+1. Download the latest release from the [Releases](https://github.com/audio-forge-rs/plugins/releases) page
+2. Copy the `.clap` or `.vst3` file to your plugin directory:
+   - **macOS**: `~/Library/Audio/Plug-Ins/CLAP/` or `~/Library/Audio/Plug-Ins/VST3/`
+   - **Linux**: `~/.clap/` or `~/.vst3/`
+   - **Windows**: `C:\Program Files\Common Files\CLAP\` or `C:\Program Files\Common Files\VST3\`
 3. Rescan plugins in Bitwig Studio
 
 ### For Developers
 1. Install Rust: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-2. Clone any plugin repository
-3. Build with: `cargo build --release`
-4. Find the built plugin in `target/bundled/`
+2. Clone this repository: `git clone https://github.com/audio-forge-rs/plugins.git`
+3. Build all plugins: `cargo xtask bundle` or `just bundle`
+4. Find the built plugins in `target/bundled/`
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development documentation.
 
 ## Contributing
 

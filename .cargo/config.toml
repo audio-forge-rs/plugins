@@ -1,0 +1,28 @@
+# Cargo configuration for Audio Forge RS plugins
+
+[build]
+# Use all available CPU cores for compilation
+jobs = -1
+
+[target.x86_64-apple-darwin]
+# macOS linking optimizations
+rustflags = ["-C", "link-arg=-Wl,-dead_strip"]
+
+[target.aarch64-apple-darwin]
+# Apple Silicon linking optimizations
+rustflags = ["-C", "link-arg=-Wl,-dead_strip"]
+
+[target.x86_64-pc-windows-msvc]
+# Windows optimizations
+rustflags = ["-C", "link-arg=/OPT:REF,ICF"]
+
+[target.x86_64-unknown-linux-gnu]
+# Linux optimizations
+rustflags = ["-C", "link-arg=-Wl,--gc-sections"]
+
+# Alias commands for common tasks
+[alias]
+# Build all plugins in release mode and bundle them
+bundle = "xtask bundle"
+# Build a specific plugin
+bundle-plugin = "xtask bundle-plugin"

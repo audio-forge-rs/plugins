@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+members = [
+    "plugins/*",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Audio Forge RS"]
+license = "AGPL-3.0"
+repository = "https://github.com/audio-forge-rs/plugins"
+
+[workspace.dependencies]
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git" }
+nih_plug_vizia = { git = "https://github.com/robbert-vdh/nih-plug.git" }
+nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug.git" }
+
+# Common dependencies for audio processing
+atomic_float = "1.0"
+crossbeam = "0.8"
+
+[profile.release]
+lto = "thin"
+strip = "symbols"
+
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = "none"
