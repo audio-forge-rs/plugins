@@ -324,12 +324,12 @@ impl LonesomePicker {
         let sparseness = self.params.sparseness.value() as f64;
         
         let base_timing = match style {
-            PickingStyle::Melody => 0.5,          // Half beat
-            PickingStyle::Clawhammer => 0.25,     // Quarter beat (alternating)
-            PickingStyle::ForwardRoll => 0.166,   // Triplet feel
-            PickingStyle::Alternating => 0.333,   // Triplet
-            PickingStyle::Sparse => 1.0 + sparseness, // Whole beat + space
-            PickingStyle::MelodicRun => 0.125 + (1.0 - density) * 0.125,  // Eighth notes
+            PickingStyle::Melody => 1.0,          // Whole beat (was way too fast at 0.5!)
+            PickingStyle::Clawhammer => 0.5,      // Half beat (was insane at 0.25!)
+            PickingStyle::ForwardRoll => 0.5,     // Half beat for alt-country (not rapid bluegrass)
+            PickingStyle::Alternating => 0.75,    // Three-quarter beat (slower, contemplative)
+            PickingStyle::Sparse => 2.0 + sparseness, // 2+ beats - very sparse (lonesome prairie)
+            PickingStyle::MelodicRun => 0.5 + (1.0 - density) * 0.5,  // Half to whole notes
         };
         
         // Sparseness adds space

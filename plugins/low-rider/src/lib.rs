@@ -430,12 +430,12 @@ impl LowRider {
         let activity = self.params.activity.value() as f64;
         
         let base_timing = match style {
-            BassStyle::Roots => 1.0,
-            BassStyle::RootFifth => 0.5,
-            BassStyle::Walking => 0.25,
-            BassStyle::Driving => 0.25 + activity * 0.25,
-            BassStyle::Sparse => 2.0,
-            BassStyle::Melodic => 0.5,
+            BassStyle::Roots => 1.0,              // Whole note - one note per beat
+            BassStyle::RootFifth => 1.0,          // Whole note alternating (was way too fast at 0.5)
+            BassStyle::Walking => 1.0,            // Quarter note walking (was insane at 0.25!)
+            BassStyle::Driving => if activity > 0.7 { 0.5 } else { 1.0 },  // Mix of half and whole
+            BassStyle::Sparse => 2.0,             // Half note - very sparse
+            BassStyle::Melodic => 0.5 + activity * 0.5,  // Eighth to quarter notes
         };
         
         // Add syncopation (random offset)
@@ -447,7 +447,7 @@ impl LowRider {
             0.0
         };
         
-        (base_timing + offset).max(0.125)  // Minimum 1/8 beat
+        (base_timing + offset).max(0.5)  // Minimum half beat (prevent insanely fast bass)
     }
     
     /// Process MIDI note on
