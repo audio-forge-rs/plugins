@@ -24,6 +24,7 @@ Our plugins are built using:
 
 This is a monorepo containing multiple plugins:
 
+- **[Lonesome Picker](plugins/lonesome-picker/)** - Intelligent banjo processor for Ample Ethno Banjo with sparse atmospheric picking and drone string intelligence
 - **[Low Rider](plugins/low-rider/)** - Intelligent bass line generator for Scarbee Rickenbacker Bass with chord analysis and musical pattern generation
 - **[Twang Machine](plugins/twang-machine/)** - Intelligent MIDI processor for NI Session Guitarist with auto-transpose, strumming, and articulation control
 - **[Tube Screamer](plugins/tubescreamer/)** - Professional emulation of the classic TS808/TS9 overdrive pedal with authentic circuit modeling
