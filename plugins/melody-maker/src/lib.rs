@@ -220,6 +220,9 @@ pub struct MelodyMaker {
 
 #[derive(Params)]
 struct MelodyMakerParams {
+    #[persist = "editor-state"]
+    editor_state: Arc<nih_plug_vizia::ViziaState>,
+    
     /// Key (shared across instances)
     #[id = "key"]
     pub key: EnumParam<Key>,
@@ -292,6 +295,7 @@ impl Default for MelodyMaker {
 impl Default for MelodyMakerParams {
     fn default() -> Self {
         Self {
+            editor_state: editor::default_state(),
             key: EnumParam::new("Key", Key::C),
             mode: EnumParam::new("Mode", Mode::Major),
             progression_type: EnumParam::new("Progression", ProgressionType::IIVVIClassic),

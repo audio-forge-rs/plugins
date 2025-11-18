@@ -1,0 +1,133 @@
+/* Melody Maker - Musical Note Generator Aesthetic */
+/* Colors: Dark background, bright orange (melody), blue (harmony/shared) */
+
+* {
+    font-family: "Roboto", sans-serif;
+    color: rgb(220, 220, 220);
+}
+
+.container {
+    background-color: rgb(20, 20, 25); /* Very dark, almost black */
+    padding: 20px;
+}
+
+.header {
+    background-color: rgb(30, 30, 40);
+    padding: 20px 25px;
+    border-radius: 10px;
+    border-bottom: 3px solid rgb(255, 140, 0); /* Bright orange accent */
+}
+
+.plugin-title {
+    font-weight: 900;
+    letter-spacing: 4px;
+}
+
+.subtitle {
+    font-style: italic;
+    margin-left: auto;
+}
+
+.main-controls {
+    padding: 20px 0;
+}
+
+.column {
+    padding: 20px;
+    background-color: rgb(35, 35, 45);
+    border-radius: 8px;
+    border: 1px solid rgb(50, 50, 60);
+}
+
+.section-label {
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgb(50, 50, 60);
+}
+
+.param-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: rgb(150, 150, 150);
+    margin-bottom: 5px;
+}
+
+.param-slider {
+    height: 28px;
+    background-color: rgb(20, 20, 25);
+    border: 1px solid rgb(60, 60, 70);
+    border-radius: 4px;
+}
+
+.param-slider .slider__active {
+    background-color: rgb(255, 140, 0); /* Bright orange */
+}
+
+.shared-param {
+    height: 40px;
+    background-color: rgb(40, 80, 120); /* Blue for shared */
+    color: rgb(200, 230, 255);
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+    border: 2px solid rgb(100, 150, 200);
+}
+
+.shared-param:hover {
+    background-color: rgb(60, 100, 140);
+}
+
+.style-button {
+    height: 45px;
+    background-color: rgb(255, 140, 0); /* Bright orange */
+    color: rgb(20, 20, 25); /* Dark text */
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    border: none;
+}
+
+.style-button:hover {
+    background-color: rgb(255, 160, 40);
+}
+
+.randomize-button {
+    height: 38px;
+    background-color: rgb(200, 60, 200); /* Purple for randomize */
+    color: white;
+    border-radius: 6px;
+    font-weight: 700;
+    border: 2px solid rgb(220, 80, 220);
+}
+
+.randomize-button:hover {
+    background-color: rgb(220, 80, 220);
+}
+
+.enabled-button {
+    height: 35px;
+    background-color: rgb(60, 60, 70);
+    border: 2px solid rgb(100, 200, 100);
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.enabled-button:checked {
+    background-color: rgb(80, 180, 80);
+    color: white;
+}
+
+.footer {
+    background-color: rgb(30, 30, 40);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border-top: 2px solid rgb(255, 140, 0);
+}
+
+.footer-text {
+    font-weight: 500;
+    text-align: center;
+}
