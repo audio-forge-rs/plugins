@@ -303,3 +303,101 @@ fn test_walking_bass_timing() {
 
 This would enable CI/CD testing to catch timing regressions.
 
+
+## UI Inspection
+
+### Why Inspect UI
+
+Plugin UIs need visual verification:
+- ✅ Correct colors and themes
+- ✅ Readable text and labels
+- ✅ Proper parameter layout
+- ✅ Consistent branding
+- ✅ Professional appearance
+
+### Quick UI Capture
+
+```bash
+# Capture single plugin
+./target/release/audio-test-harness capture-ui --plugin twang-machine
+
+# Capture all plugins
+./target/release/audio-test-harness capture-ui --all
+```
+
+### UI Inspection Workflow
+
+1. **Build plugin**
+   ```bash
+   cargo xtask bundle audio-forge-twang-machine --release
+   ```
+
+2. **Capture UI**
+   ```bash
+   ./target/release/audio-test-harness capture-ui --plugin twang-machine
+   ```
+
+3. **Visual inspection checklist:**
+   - ✅ All parameters visible
+   - ✅ Text readable at plugin size
+   - ✅ Colors match theme (check editor_style.css)
+   - ✅ Layout clean and organized
+   - ✅ No cut-off elements
+   - ✅ Consistent with other plugins
+
+4. **Fix issues and repeat**
+
+### UI Testing Tools
+
+- **screenshot-plugin.sh** - Single plugin capture
+- **capture-all-plugins.sh** - All plugins with HTML index
+- **test harness integration** - `capture-ui` subcommand
+
+See `tools/plugin-ui-inspector/README.md` for details.
+
+---
+
+## Complete Testing Cycle
+
+```
+┌─────────────────────────────────────────────────┐
+│  GENERATE TEST FILES                            │
+│  ./tools/test-plugins.sh                        │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│  BUILD PLUGIN                                   │
+│  cargo xtask bundle <plugin> --release          │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│  CAPTURE UI                                     │
+│  audio-test-harness capture-ui --plugin <name>  │
+│  → Visual inspection                            │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│  TEST IN DAW                                    │
+│  → Load plugin                                  │
+│  → Import test MIDI/audio                       │
+│  → LISTEN to output                             │
+│  → Render audio                                 │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│  ANALYZE OUTPUT                                 │
+│  audio-test-harness analyze -i output.wav      │
+│  → Check timing, frequency, dynamics            │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│  VERIFY & ITERATE                               │
+│  → Does it sound right?                         │
+│  → Does it look right?                          │
+│  → Do measurements match expectations?          │
+│  → If not, fix and repeat                       │
+└─────────────────────────────────────────────────┘
+```
+
+**Full sensory testing:** HEAR the audio, SEE the UI, MEASURE the output!
+

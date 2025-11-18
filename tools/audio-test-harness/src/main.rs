@@ -87,6 +87,21 @@ enum Commands {
         #[arg(short, long)]
         output_dir: PathBuf,
     },
+    
+    /// Capture plugin UI screenshots
+    CaptureUi {
+        /// Plugin name (e.g., "twang-machine", "low-rider")
+        #[arg(short, long)]
+        plugin: Option<String>,
+        
+        /// Output directory for screenshots
+        #[arg(short, long, default_value = "/tmp/plugin-screenshots")]
+        output: PathBuf,
+        
+        /// Capture all plugins
+        #[arg(short, long)]
+        all: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -181,6 +196,10 @@ fn main() -> Result<()> {
         
         Commands::TestAll { plugins_dir, output_dir } => {
             handle_test_all(plugins_dir, output_dir)?;
+        }
+        
+        Commands::CaptureUi { plugin, output, all } => {
+            handle_capture_ui(plugin, output, all)?;
         }
     }
     
@@ -323,6 +342,88 @@ fn handle_test_all(plugins_dir: PathBuf, output_dir: PathBuf) -> Result<()> {
         
         // Determine plugin type and run appropriate tests
         // TODO: Implement automatic test detection
+    }
+    
+    Ok(())
+}
+
+fn handle_capture_ui(plugin: Option<String>, output: PathBuf, all: bool) -> Result<()> {
+    use std::process::Command;
+    
+    println!("{} Plugin UI Screenshot Capture", "📸".bold());
+    println!();
+    
+    std::fs::create_dir_all(&output)?;
+    
+    if all {
+        // Run the capture-all script
+        println!("{} Launching capture-all script...", "→".cyan());
+        println!("  This will guide you through capturing all plugin UIs");
+        println!();
+        
+        let script_path = "tools/plugin-ui-inspector/capture-all-plugins.sh";
+        
+        Command::new("bash")
+            .arg(script_path)
+            .status()
+            .context("Failed to run capture-all script")?;
+            
+    } else if let Some(name) = plugin {
+        // Capture single plugin
+        println!("{} Capturing: {}", "→".cyan(), name.green());
+        println!();
+        println!("{}  Instructions:", "📋".bold());
+        println!("  1. Open your DAW");
+        println!("  2. Load the {} plugin", name);
+        println!("  3. Position the plugin window clearly");
+        println!("  4. When ready, you'll select the window to capture");
+        println!();
+        
+        println!("Press RETURN when ready...");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        
+        println!("{} Capturing in 3 seconds...", "→".cyan());
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        
+        let filename = output.join(format!("{}.png", name));
+        
+        Command::new("screencapture")
+            .arg("-i")  // Interactive mode
+            .arg("-o")  // Only capture window, not shadow
+            .arg(&filename)
+            .status()
+            .context("Failed to run screencapture")?;
+        
+        if filename.exists() {
+            println!("{} Screenshot saved: {}", "✓".green().bold(), filename.display());
+            
+            // Get dimensions
+            if let Ok(output) = Command::new("sips")
+                .arg("-g")
+                .arg("pixelWidth")
+                .arg("-g")
+                .arg("pixelHeight")
+                .arg(&filename)
+                .output()
+            {
+                let info = String::from_utf8_lossy(&output.stdout);
+                println!("{}", info);
+            }
+            
+            // Open preview
+            Command::new("open").arg(&filename).status().ok();
+            
+        } else {
+            println!("{} Screenshot cancelled or failed", "⚠".yellow());
+        }
+        
+    } else {
+        println!("{} Please specify --plugin NAME or --all", "⚠".yellow());
+        println!();
+        println!("Examples:");
+        println!("  audio-test-harness capture-ui --plugin twang-machine");
+        println!("  audio-test-harness capture-ui --all");
     }
     
     Ok(())
