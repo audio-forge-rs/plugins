@@ -356,3 +356,24 @@ For now, use Session Guitarist's default articulation settings.
 ---
 
 **Audio Forge RS** - Making guitar sounds accessible to everyone.
+
+---
+
+## Recent Improvements (2024-11-17)
+
+### Timing Fixes
+- ✅ **Fixed strum speed**: Default increased from 20ms to 60ms for natural feel
+- ✅ **Increased max strum speed**: Range now 20-250ms (allows slow, contemplative strums)
+- ✅ **Fixed double-increment bug**: Strums and arpeggios now advance correctly
+- ✅ **Improved pattern accuracy**: Index management fixed for all play modes
+
+### Default Settings
+- ✅ **Changed default mode**: Now "Single Note" (better for alt-country leads)
+- ✅ **Optimized strum speed**: 60ms default feels natural and musical
+
+### What This Means
+Previously, strums were too fast and patterns would skip notes due to double-incrementing. 
+Now the timing feels right for alt-country guitar parts, and patterns flow smoothly.
+
+**Test it:** Load a chord progression at 100 BPM, switch to Strum Down mode, and hear 
+the difference - it now sounds like an actual guitarist strumming, not a MIDI glitch!

@@ -114,12 +114,12 @@ impl Default for TwangMachineParams {
         Self {
             editor_state: editor::default_state(),
             
-            mode: EnumParam::new("Mode", PlayMode::StrumDown),
+            mode: EnumParam::new("Mode", PlayMode::Single),
             
             strum_speed: FloatParam::new(
                 "Strum Speed",
                 60.0,  // ms between notes (default: natural strum)
-                FloatRange::Linear { min: 20.0, max: 150.0 },
+                FloatRange::Linear { min: 20.0, max: 250.0 },
             )
             .with_unit(" ms")
             .with_value_to_string(formatters::v2s_f32_rounded(1)),
@@ -244,9 +244,8 @@ impl TwangMachine {
                     self.strum_index = 0;
                 }
                 
-                let note = sorted.get(self.strum_index).copied();
-                self.strum_index += 1;
-                note
+                // Don't increment here - it's done in process_strum after note is played
+                sorted.get(self.strum_index).copied()
             }
             
             PlayMode::ArpeggioUp | PlayMode::ArpeggioDown | PlayMode::ArpeggioUpDown => {
@@ -429,11 +428,8 @@ impl TwangMachine {
                     }
                 }
                 
-                // Advance index
-                if mode == PlayMode::ArpeggioUp || mode == PlayMode::ArpeggioDown 
-                    || mode == PlayMode::ArpeggioUpDown {
-                    self.strum_index += 1;
-                }
+                // Advance index for all pattern modes (strum and arpeggio)
+                self.strum_index += 1;
             }
         }
     }
