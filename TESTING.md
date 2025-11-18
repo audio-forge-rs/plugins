@@ -8,37 +8,69 @@ When building MIDI processor plugins, it's critical to **actually hear** the tim
 
 ## Testing Tools
 
-### 1. MIDI Test File Generator
+### 1. Audio Test Harness (PRIMARY TOOL)
 
-Use `test_midi.py` to create simple chord progression MIDI files:
+We've built a comprehensive CLI test harness in Rust at `tools/audio-test-harness`.
 
+**Quick Start:**
 ```bash
-python3 test_midi.py
+# Run comprehensive test suite
+./tools/test-plugins.sh
 ```
 
-This creates:
-- `test_slow.mid` (80 BPM)
-- `test_medium.mid` (100 BPM)  
-- `test_fast.mid` (120 BPM)
+This generates:
+- Test audio files (sine waves, noise, impulses)
+- MIDI files at multiple tempos (80, 100, 120 BPM)
+- Analysis tools for audio output
 
-Each contains a simple I-IV-V-I progression in C major with 4-beat chord changes.
+**Manual Usage:**
 
-### 2. DAW Testing (Primary Method)
+```bash
+# Generate sine wave
+./target/release/audio-test-harness generate sine --freq 440 --duration 2.0 --output test.wav
 
-**Best approach:**
-1. Build plugin: `cargo xtask bundle <plugin-name> --release`
-2. Copy to plugin folder: `cp target/bundled/*.clap ~/Library/Audio/Plug-Ins/CLAP/`
-3. Open Bitwig/Ableton/Reaper
-4. Create MIDI track with test progression
-5. Route through plugin → virtual instrument
-6. **LISTEN** to the timing and adjust
+# Generate MIDI progression
+./target/release/audio-test-harness generate midi --chords "C,F,G,C" --tempo 100 --beats 4 --output test.mid
 
-### 3. CLI Testing (Future)
+# Analyze audio
+./target/release/audio-test-harness analyze -i test.wav stats
+./target/release/audio-test-harness analyze -i test.wav spectrum
+./target/release/audio-test-harness analyze -i test.wav timing
+./target/release/audio-test-harness analyze -i test.wav dynamics
+```
 
-Currently limited due to plugin format requirements. Potential options:
-- **FluidSynth** - MIDI playback with SoundFonts
-- **SoX** - Audio manipulation
-- **abc2midi** - Create test MIDI from ABC notation
+**Analysis Features:**
+- 📊 **Stats** - RMS, peak levels, crest factor
+- 📈 **Spectrum** - FFT analysis, dominant frequencies
+- ⏱️ **Timing** - Note onset detection, tempo estimation
+- 📉 **Dynamics** - Peak detection, dynamic range
+
+### 2. DAW Testing (For Actual Listening)
+
+**Required workflow:**
+1. Run test suite: `./tools/test-plugins.sh`
+2. Build plugin: `cargo xtask bundle <plugin-name> --release`
+3. Load plugin in DAW
+4. Import test MIDI file from `/tmp/audio-forge-tests/`
+5. Route through virtual instrument
+6. **LISTEN** - Does timing feel right?
+7. Render to WAV
+8. Analyze output: `./target/release/audio-test-harness analyze -i OUTPUT.wav timing`
+
+### 3. Test File Locations
+
+After running `./tools/test-plugins.sh`:
+
+**Audio files** (`/tmp/audio-forge-tests/`):
+- `sine_110hz.wav`, `sine_220hz.wav`, `sine_440hz.wav` - Pure tones
+- `noise.wav` - White noise (2 seconds)
+- `impulse.wav` - Impulse response test
+
+**MIDI files** (`/tmp/audio-forge-tests/`):
+- `progression_80bpm.mid` - Slow alt-country tempo
+- `progression_100bpm.mid` - Medium tempo  
+- `progression_120bpm.mid` - Fast tempo
+- `progression_complex.mid` - C-Am-F-G progression
 
 ## Timing Issues Fixed
 
@@ -160,3 +192,114 @@ For 4/4 time at 100 BPM:
 ---
 
 **Remember: If it sounds too busy, it probably is. Alt-country is about space, feel, and restraint.**
+
+## Development Workflow with Test Harness
+
+### For MIDI Processor Plugins
+
+1. **Make code changes** to plugin timing/pattern generation
+2. **Build plugin:** `cargo xtask bundle <plugin-name> --release`
+3. **Test in DAW:**
+   - Load plugin
+   - Import `/tmp/audio-forge-tests/progression_100bpm.mid`
+   - Route to appropriate virtual instrument
+   - **LISTEN** - Does it sound right?
+4. **Render audio** to `/tmp/bass_test.wav` (or similar)
+5. **Analyze timing:**
+   ```bash
+   ./target/release/audio-test-harness analyze -i /tmp/bass_test.wav timing
+   ```
+6. **Check results:**
+   - Note onset times should match expected rhythm
+   - Estimated BPM should be close to 100
+   - Intervals should match your style (1.0 = quarter note, 0.5 = eighth, etc.)
+
+### For Audio Effect Plugins
+
+1. **Make code changes** to effect processing
+2. **Build plugin:** `cargo xtask bundle <plugin-name> --release`
+3. **Test in DAW:**
+   - Load plugin
+   - Import test tone (e.g., `/tmp/audio-forge-tests/sine_440hz.wav`)
+   - Process through plugin
+   - **LISTEN** - Does it sound right?
+4. **Render audio** to `/tmp/effect_test.wav`
+5. **Analyze output:**
+   ```bash
+   # Check levels and clipping
+   ./target/release/audio-test-harness analyze -i /tmp/effect_test.wav stats
+   
+   # Check frequency response
+   ./target/release/audio-test-harness analyze -i /tmp/effect_test.wav spectrum
+   
+   # Check dynamics
+   ./target/release/audio-test-harness analyze -i /tmp/effect_test.wav dynamics
+   ```
+
+### Example: Testing Low Rider Bass
+
+```bash
+# 1. Generate test MIDI
+./target/release/audio-test-harness generate midi \
+  --chords "C,F,G,C" \
+  --tempo 100 \
+  --beats 4 \
+  --output /tmp/test_chords.mid
+
+# 2. Load in DAW:
+#    MIDI Track → Low Rider → Scarbee Rick Bass → Render to /tmp/bass_output.wav
+
+# 3. Analyze timing
+./target/release/audio-test-harness analyze -i /tmp/bass_output.wav timing
+
+# Expected output for Walking bass style at 100 BPM:
+#   - Note onsets every ~0.6 seconds (quarter notes)
+#   - Estimated tempo: ~100 BPM
+#   - Regular intervals (not random)
+```
+
+### Example: Testing Tube Screamer
+
+```bash
+# 1. Generate test tone
+./target/release/audio-test-harness generate sine \
+  --freq 440 \
+  --duration 2.0 \
+  --output /tmp/clean_guitar.wav
+
+# 2. Load in DAW:
+#    Audio Track (/tmp/clean_guitar.wav) → Tube Screamer → Render to /tmp/driven_guitar.wav
+
+# 3. Analyze frequency response
+./target/release/audio-test-harness analyze -i /tmp/clean_guitar.wav spectrum
+./target/release/audio-test-harness analyze -i /tmp/driven_guitar.wav spectrum
+
+# Expected: More harmonic content in driven signal
+# Should see harmonics at 880 Hz, 1320 Hz, etc.
+
+# 4. Check levels
+./target/release/audio-test-harness analyze -i /tmp/driven_guitar.wav stats
+
+# Expected: Higher RMS, compressed dynamics (lower crest factor)
+```
+
+## Automated Testing (Future)
+
+The test harness is designed to support automated testing:
+
+```rust
+// Future test example
+#[test]
+fn test_walking_bass_timing() {
+    let midi = generate_test_midi("C,F,G,C", 100);
+    let audio = process_through_plugin("low-rider", midi);
+    let timing = analyze_timing(audio);
+    
+    // Verify quarter note spacing (0.6s at 100 BPM)
+    assert!(timing.avg_interval >= 0.55 && timing.avg_interval <= 0.65);
+    assert!(timing.estimated_bpm >= 95.0 && timing.estimated_bpm <= 105.0);
+}
+```
+
+This would enable CI/CD testing to catch timing regressions.
+

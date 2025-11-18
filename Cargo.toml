@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "plugins/*",
     "xtask",
+    "tools/audio-test-harness",
 ]
 
 [workspace.package]

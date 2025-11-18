@@ -1,0 +1,22 @@
+[package]
+name = "audio-test-harness"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Audio processing
+hound = "3.5"           # WAV file reading/writing
+
+# MIDI
+midly = "0.5"           # MIDI file parsing
+
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+anyhow = "1.0"
+colored = "2.0"
+
+# Analysis
+rustfft = "6.1"         # FFT for frequency analysis
+
+# Random for noise generation
+rand = "0.8"
