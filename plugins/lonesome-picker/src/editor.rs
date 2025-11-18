@@ -83,21 +83,6 @@ pub(crate) fn create(
                     .child_right(Pixels(10.0));
 
                     // Tempo
-                    VStack::new(cx, |cx| {
-                        Label::new(cx, "TEMPO")
-                            .font_family(vec![FamilyOwned::Name(String::from(assets::NOTO_SANS))])
-                            .font_size(12.0)
-                            .font_weight(FontWeightKeyword::Bold)
-                            .color(BANJO_CREAM)
-                            .height(Pixels(25.0));
-                        
-                        ParamSlider::new(cx, Data::params, |params| &params.tempo)
-                            .height(Pixels(40.0))
-                            .background_color(BANJO_DARK);
-                    })
-                    .width(Stretch(1.0))
-                    .child_left(Pixels(10.0))
-                    .child_right(Pixels(15.0));
                 })
                 .height(Pixels(80.0))
                 .background_color(BANJO_LIGHT_WOOD)

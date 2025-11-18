@@ -41,10 +41,6 @@ pub struct LowRider {
     samples_per_beat: f64,
     current_sample: u64,
     next_note_sample: u64,
-    
-    // Articulation state
-    use_slide: bool,
-    use_mute: bool,
 }
 
 #[derive(Params)]
@@ -75,10 +71,6 @@ struct LowRiderParams {
     /// Note length/sustain
     #[id = "sustain"]
     pub sustain: FloatParam,
-    
-    /// Tempo (BPM) for pattern generation
-    #[id = "tempo"]
-    pub tempo: FloatParam,
     
     /// Octave preference (E1-E2 vs E2-E3)
     #[id = "octave"]
@@ -119,7 +111,6 @@ enum ChordQuality {
     Minor,
     Dominant,
     Diminished,
-    Augmented,
 }
 
 impl Default for LowRider {
@@ -140,8 +131,6 @@ impl Default for LowRider {
             samples_per_beat: 44100.0,
             current_sample: 0,
             next_note_sample: 0,
-            use_slide: false,
-            use_mute: false,
         }
     }
 }
@@ -198,14 +187,6 @@ impl Default for LowRiderParams {
             .with_value_to_string(formatters::v2s_f32_percentage(0))
             .with_string_to_value(formatters::s2v_f32_percentage()),
             
-            tempo: FloatParam::new(
-                "Tempo",
-                120.0,
-                FloatRange::Linear { min: 60.0, max: 180.0 },
-            )
-            .with_unit(" BPM")
-            .with_value_to_string(formatters::v2s_f32_rounded(0)),
-            
             octave: IntParam::new(
                 "Octave",
                 0,  // 0 = auto, -1 = lower, +1 = higher
@@ -226,7 +207,6 @@ impl Default for LowRiderParams {
 // Scarbee Rickenbacker Bass range
 const BASS_MIN_NOTE: u8 = 28;  // E1
 const BASS_MAX_NOTE: u8 = 55;  // G3
-const BASS_OPTIMAL_LOW: u8 = 28;   // E1
 const BASS_OPTIMAL_HIGH: u8 = 43;  // G2
 
 impl LowRider {
@@ -403,27 +383,6 @@ impl LowRider {
         Some((note, use_slide, use_mute))
     }
     
-    /// Get note duration in beats based on style and sustain
-    fn get_note_duration(&self, style: BassStyle) -> f64 {
-        let sustain = self.params.sustain.value() as f64;
-        let activity = self.params.activity.value() as f64;
-        
-        let base_duration = match style {
-            BassStyle::Roots => 1.0,        // Whole beat
-            BassStyle::RootFifth => 0.5,    // Half beat
-            BassStyle::Walking => 0.25,     // Quarter beat
-            BassStyle::Driving => 0.5,      // Half beat
-            BassStyle::Sparse => 2.0,       // Two beats
-            BassStyle::Melodic => 0.5,      // Half beat
-        };
-        
-        // Modify by activity (more activity = shorter notes)
-        let duration = base_duration * (1.0 - activity * 0.5);
-        
-        // Modify by sustain (higher sustain = longer notes)
-        duration * (0.5 + sustain * 0.5)
-    }
-    
     /// Get next note timing based on style and syncopation
     fn get_next_note_timing(&mut self, style: BassStyle) -> f64 {
         let syncopation = self.params.syncopation.value() as f64;
@@ -505,7 +464,7 @@ impl LowRider {
                 let style = self.params.style.value();
                 
                 // Generate next note
-                if let Some((note, use_slide, use_mute)) = self.generate_next_note() {
+                if let Some((note, _use_slide, use_mute)) = self.generate_next_note() {
                     // Stop current note if playing
                     if let Some(current) = self.current_bass_note {
                         context.send_event(NoteEvent::NoteOff {
@@ -590,7 +549,7 @@ impl Plugin for LowRider {
         _context: &mut impl InitContext<Self>,
     ) -> bool {
         self.sample_rate = buffer_config.sample_rate as f64;
-        self.update_tempo();
+        self.update_tempo(120.0); // Default tempo, will be updated from DAW
         true
     }
 
@@ -615,8 +574,13 @@ impl Plugin for LowRider {
         _aux: &mut AuxiliaryBuffers,
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        // Update tempo if changed
-        self.update_tempo();
+        // Get transport info from DAW
+        let transport = context.transport();
+        let tempo = transport.tempo.unwrap_or(120.0);
+        let playing = transport.playing;
+        
+        // Update tempo from DAW
+        self.update_tempo(tempo);
         
         // Process incoming MIDI
         while let Some(event) = context.next_event() {
@@ -632,18 +596,19 @@ impl Plugin for LowRider {
             }
         }
         
-        // Generate bass line
-        let samples = _buffer.samples() as u32;
-        self.process_bass_line(samples, context);
-        self.current_sample += samples as u64;
+        // Generate bass line only if DAW is playing
+        if playing {
+            let samples = _buffer.samples() as u32;
+            self.process_bass_line(samples, context);
+            self.current_sample += samples as u64;
+        }
         
         ProcessStatus::Normal
     }
 }
 
 impl LowRider {
-    fn update_tempo(&mut self) {
-        let bpm = self.params.tempo.value() as f64;
+    fn update_tempo(&mut self, bpm: f64) {
         self.samples_per_beat = (60.0 / bpm) * self.sample_rate;
     }
 }

@@ -97,16 +97,10 @@ pub(crate) fn create(params: Arc<GospelWheelsParams>) -> Option<Box<dyn Editor>>
                     .class("column")
                     .width(Pixels(180.0));
 
-                    // Right column - Tempo and options
+                    // Right column - Options
                     VStack::new(cx, |cx| {
-                        Label::new(cx, "TEMPO")
-                            .class("param-label");
-                        ParamSlider::new(cx, Data::params, |params| &params.tempo)
-                            .class("param-slider");
-
                         Label::new(cx, "AUTO-THICKEN")
-                            .class("param-label")
-                            .top(Pixels(20.0));
+                            .class("param-label");
                         ParamButton::new(cx, Data::params, |params| &params.thicken)
                             .class("toggle-button");
 

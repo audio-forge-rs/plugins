@@ -24,7 +24,6 @@ mod editor;
 // 5. Voice Leading - Smooth chord transitions (minimal movement)
 // 6. Register Control - Low/mid/high organ ranges
 
-const MAX_VOICE_COUNT: usize = 6; // Max simultaneous organ notes
 const HISTORY_SIZE: usize = 16;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Enum)]
@@ -40,7 +39,6 @@ enum PlayStyle {
 #[derive(Debug, Clone, Copy)]
 struct ChordAnalysis {
     root: u8,
-    quality: ChordQuality,
     notes: [Option<u8>; 7], // Available chord tones
     bass_note: u8,
 }
@@ -67,11 +65,6 @@ struct GospelWheels {
     // Musical intelligence
     current_chord: Option<ChordAnalysis>,
     last_voicing: Vec<u8>,
-    
-    // Timing for rhythmic patterns
-    sample_position: u64,
-    samples_per_quarter: f64,
-    next_event_sample: u64,
     
     // Swell state
     swell_position: f32, // 0.0 to 1.0
@@ -104,10 +97,6 @@ struct GospelWheelsParams {
     #[id = "register"]
     pub register: FloatParam,
 
-    /// Tempo for rhythmic patterns
-    #[id = "tempo"]
-    pub tempo: FloatParam,
-
     /// Auto-thicken - add harmonic layers automatically
     #[id = "thicken"]
     pub thicken: BoolParam,
@@ -122,9 +111,6 @@ impl Default for GospelWheels {
             note_history: VecDeque::new(),
             current_chord: None,
             last_voicing: Vec::new(),
-            sample_position: 0,
-            samples_per_quarter: 44100.0,
-            next_event_sample: 0,
             swell_position: 0.0,
             swell_direction: 1.0,
         }
@@ -181,14 +167,6 @@ impl Default for GospelWheelsParams {
             .with_value_to_string(formatters::v2s_f32_percentage(0))
             .with_string_to_value(formatters::s2v_f32_percentage()),
 
-            tempo: FloatParam::new(
-                "Tempo",
-                100.0,
-                FloatRange::Linear { min: 60.0, max: 180.0 },
-            )
-            .with_unit(" BPM")
-            .with_value_to_string(formatters::v2s_f32_rounded(0)),
-
             thicken: BoolParam::new("Auto-Thicken", true),
         }
     }
@@ -237,7 +215,6 @@ impl GospelWheels {
 
         Some(ChordAnalysis {
             root,
-            quality,
             notes,
             bass_note,
         })
@@ -488,7 +465,7 @@ impl GospelWheels {
         (base_velocity as f32 * swell_mod).min(127.0) as u8
     }
 
-    fn update_swell(&mut self, samples: u32, sample_rate: f32) {
+    fn update_swell(&mut self, samples: u32, sample_rate: f32, tempo: f64) {
         let swell_amount = self.params.swell.value() / 100.0;
         
         if swell_amount < 0.1 {
@@ -496,9 +473,8 @@ impl GospelWheels {
             return;
         }
 
-        // Swell period based on tempo
-        let tempo = self.params.tempo.value();
-        let swell_period_samples = (sample_rate * 240.0 / tempo) as f32; // 4 beats
+        // Swell period based on tempo from DAW transport
+        let swell_period_samples = (sample_rate * 240.0 / tempo as f32) as f32; // 4 beats
         
         let increment = samples as f32 / swell_period_samples;
         
@@ -601,11 +577,11 @@ impl Plugin for GospelWheels {
     ) -> ProcessStatus {
         let mut output_events = Vec::new();
         
-        // Update timing
-        let sample_rate = context.transport().sample_rate;
-        let tempo = self.params.tempo.value();
-        self.samples_per_quarter = sample_rate as f64 * 60.0 / tempo as f64;
-
+        // Get transport info from DAW
+        let transport = context.transport();
+        let tempo = transport.tempo.unwrap_or(120.0);
+        let playing = transport.playing;
+        
         // Process input MIDI events
         while let Some(event) = context.next_event() {
             match event {
@@ -655,12 +631,22 @@ impl Plugin for GospelWheels {
             }
         }
 
-        // Update swell modulation
-        self.update_swell(_buffer.samples() as u32, sample_rate);
+        // Update swell based on DAW transport
+        let sample_rate = context.transport().sample_rate;
+        self.update_swell(_buffer.samples() as u32, sample_rate, tempo);
 
-        // Send output events
-        for event in output_events {
-            context.send_event(event);
+        // Only send events if transport is playing
+        if playing {
+            for event in output_events {
+                context.send_event(event);
+            }
+        } else {
+            // If not playing, still release notes that were turned off
+            for event in &output_events {
+                if matches!(event, NoteEvent::NoteOff { .. }) {
+                    context.send_event(*event);
+                }
+            }
         }
 
         ProcessStatus::Normal

@@ -75,10 +75,6 @@ struct LonesonmePickerParams {
     #[id = "sparseness"]
     pub sparseness: FloatParam,
     
-    /// Tempo for pattern generation
-    #[id = "tempo"]
-    pub tempo: FloatParam,
-    
     /// Auto-transpose to banjo range
     #[id = "auto_transpose"]
     pub auto_transpose: BoolParam,
@@ -120,7 +116,6 @@ enum PickingStyle {
 const BANJO_MIN_NOTE: u8 = 50;   // D3 (4th string open)
 const BANJO_MAX_NOTE: u8 = 81;   // A5 (reasonable fret limit)
 const BANJO_DRONE_NOTE: u8 = 67; // G4 (5th string)
-const BANJO_SWEET_MIN: u8 = 55;  // G3
 const BANJO_SWEET_MAX: u8 = 74;  // D5
 
 impl Default for LonesomePicker {
@@ -196,14 +191,6 @@ impl Default for LonesonmePickerParams {
             .with_unit("%")
             .with_value_to_string(formatters::v2s_f32_percentage(0))
             .with_string_to_value(formatters::s2v_f32_percentage()),
-            
-            tempo: FloatParam::new(
-                "Tempo",
-                100.0,
-                FloatRange::Linear { min: 60.0, max: 180.0 },
-            )
-            .with_unit(" BPM")
-            .with_value_to_string(formatters::v2s_f32_rounded(0)),
             
             auto_transpose: BoolParam::new("Auto Transpose", true),
         }
@@ -476,8 +463,7 @@ impl LonesomePicker {
         }
     }
     
-    fn update_tempo(&mut self) {
-        let bpm = self.params.tempo.value() as f64;
+    fn update_tempo(&mut self, bpm: f64) {
         self.samples_per_beat = (60.0 / bpm) * self.sample_rate;
     }
 }
@@ -517,7 +503,7 @@ impl Plugin for LonesomePicker {
         _context: &mut impl InitContext<Self>,
     ) -> bool {
         self.sample_rate = buffer_config.sample_rate as f64;
-        self.update_tempo();
+        self.update_tempo(120.0); // Default tempo, will be updated from DAW
         true
     }
 
@@ -542,8 +528,13 @@ impl Plugin for LonesomePicker {
         _aux: &mut AuxiliaryBuffers,
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        // Update tempo if changed
-        self.update_tempo();
+        // Get transport info from DAW
+        let transport = context.transport();
+        let tempo = transport.tempo.unwrap_or(120.0);
+        let playing = transport.playing;
+        
+        // Update tempo from DAW
+        self.update_tempo(tempo);
         
         // Process incoming MIDI
         while let Some(event) = context.next_event() {
@@ -559,10 +550,12 @@ impl Plugin for LonesomePicker {
             }
         }
         
-        // Generate banjo picking pattern
-        let samples = _buffer.samples() as u32;
-        self.process_picking(samples, context);
-        self.current_sample += samples as u64;
+        // Generate banjo picking pattern only if DAW is playing
+        if playing {
+            let samples = _buffer.samples() as u32;
+            self.process_picking(samples, context);
+            self.current_sample += samples as u64;
+        }
         
         ProcessStatus::Normal
     }

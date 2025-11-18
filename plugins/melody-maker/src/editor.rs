@@ -135,12 +135,6 @@ pub fn create(params: Arc<MelodyMakerParams>) -> Option<Box<dyn Editor>> {
                         ParamSlider::new(cx, Data::params, |params| &params.phrase_length)
                             .class("param-slider");
 
-                        Label::new(cx, "TEMPO")
-                            .class("param-label")
-                            .top(Pixels(10.0));
-                        ParamSlider::new(cx, Data::params, |params| &params.tempo)
-                            .class("param-slider");
-
                         Label::new(cx, "RANDOMIZE")
                             .class("param-label")
                             .top(Pixels(15.0));

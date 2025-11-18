@@ -263,10 +263,6 @@ struct MelodyMakerParams {
     #[id = "randomize"]
     pub randomize: BoolParam,
     
-    /// Tempo (for timing - can sync to host later)
-    #[id = "tempo"]
-    pub tempo: FloatParam,
-    
     /// Enable/Disable output
     #[id = "enabled"]
     pub enabled: BoolParam,
@@ -343,13 +339,6 @@ impl Default for MelodyMakerParams {
             
             randomize: BoolParam::new("Randomize", false),
             
-            tempo: FloatParam::new(
-                "Tempo",
-                100.0,
-                FloatRange::Linear { min: 60.0, max: 180.0 },
-            )
-            .with_unit(" BPM"),
-            
             enabled: BoolParam::new("Enabled", true),
         }
     }
@@ -357,14 +346,14 @@ impl Default for MelodyMakerParams {
 
 impl MelodyMaker {
     /// Update global progression if parameters changed
-    fn update_global_progression(&mut self) {
+    fn update_global_progression(&mut self, tempo: f32) {
         let mut global = GLOBAL_PROGRESSION.write();
         
         // Update from parameters
         global.key = self.params.key.value();
         global.mode = self.params.mode.value();
         global.progression = self.params.progression_type.value().to_chords();
-        global.tempo = self.params.tempo.value();
+        global.tempo = tempo;
     }
     
     /// Read current chord from global progression
@@ -580,7 +569,8 @@ impl Plugin for MelodyMaker {
         _context: &mut impl InitContext<Self>,
     ) -> bool {
         self.sample_rate = buffer_config.sample_rate;
-        self.samples_per_beat = (60.0 / self.params.tempo.value() as f64) * self.sample_rate as f64;
+        // Initial tempo will be set from DAW transport in process()
+        self.samples_per_beat = (60.0 / 120.0) * self.sample_rate as f64;
         true
     }
 
@@ -597,11 +587,21 @@ impl Plugin for MelodyMaker {
         _aux: &mut AuxiliaryBuffers,
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        // Update global progression from parameters
-        self.update_global_progression();
+        // Get transport info from DAW
+        let transport = context.transport();
+        let tempo = transport.tempo.unwrap_or(120.0) as f32;
+        let playing = transport.playing;
+        
+        // Update global progression from parameters and DAW tempo
+        self.update_global_progression(tempo);
+        
+        // Only generate notes if DAW is playing
+        if !playing {
+            return ProcessStatus::Normal;
+        }
         
         // Calculate timing
-        self.samples_per_beat = (60.0 / self.params.tempo.value() as f64) * self.sample_rate as f64;
+        self.samples_per_beat = (60.0 / tempo as f64) * self.sample_rate as f64;
         let samples_per_note = (self.samples_per_beat * (2.0 - self.params.density.value() as f64)) as u64;
         
         self.samples_since_last_note += _buffer.samples() as u64;
