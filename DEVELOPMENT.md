@@ -1,295 +1,260 @@
-# Audio Forge RS - Development Guide
+# Audio Forge Development Guide
 
-This repository contains multiple Bitwig CLAP/VST3 plugins built with Rust and [nih-plug](https://github.com/robbert-vdh/nih-plug).
+## Complete Development Loop
 
-## Project Structure
+This project now has a **complete test-driven development cycle** for audio plugins:
 
 ```
-audio-forge-rs/plugins/
-├── Cargo.toml              # Workspace configuration
-├── .cargo/
-│   └── config.toml         # Build optimizations
-├── plugins/
-│   ├── gain/               # Example: Simple gain plugin
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs      # Plugin implementation
-│   │       └── editor.rs   # GUI (using VIZIA)
-│   └── [your-plugin]/      # Add more plugins here
-├── xtask/                  # Build automation
-│   ├── Cargo.toml
-│   └── src/main.rs
-├── justfile                # Task runner commands
-└── DEVELOPMENT.md          # This file
+CODE → BUILD → TEST → MEASURE → ANALYZE → ITERATE
+  ↑                                              ↓
+  └──────────────── FEEDBACK LOOP ───────────────┘
 ```
-
-## Prerequisites
-
-1. **Install Rust** (if not already installed):
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   ```
-
-2. **Install Just** (optional but recommended):
-   ```bash
-   # macOS
-   brew install just
-   
-   # or using cargo
-   cargo install just
-   ```
-
-3. **Platform-specific dependencies**:
-   
-   **macOS**: Xcode Command Line Tools
-   ```bash
-   xcode-select --install
-   ```
-   
-   **Linux**: Development libraries
-   ```bash
-   # Ubuntu/Debian
-   sudo apt install libx11-dev libxcursor-dev libxcb1-dev libxcb-render0-dev \
-                    libxcb-shape0-dev libxcb-xfixes0-dev libasound2-dev
-   
-   # Fedora
-   sudo dnf install libX11-devel libXcursor-devel libxcb-devel alsa-lib-devel
-   ```
 
 ## Quick Start
 
-### Using Just (recommended)
-
 ```bash
-# List all available commands
-just
+# 1. Generate all test files
+./tools/test-plugins.sh
 
-# Build all plugins in debug mode
-just build
+# 2. Build your plugin
+cargo xtask bundle <plugin-name> --release
 
-# Build and bundle all plugins for release
-just bundle
+# 3. Test in DAW with files from /tmp/audio-forge-tests/
 
-# Build a specific plugin
-just bundle-plugin gain
-
-# Install plugins to your system (macOS)
-just install-mac
-
-# Run tests
-just test
-
-# Run linter
-just lint
-
-# Format code
-just fmt
+# 4. Analyze output
+./target/release/audio-test-harness analyze -i YOUR_OUTPUT.wav timing
 ```
 
-### Using Cargo directly
+## Tools We've Built
 
+### Audio Test Harness (`tools/audio-test-harness`)
+
+A complete Rust-based CLI tool for audio generation and analysis.
+
+**Generate Test Signals:**
 ```bash
-# Build all plugins
-cargo build --release
+# Sine waves (test overdrive, EQ, etc.)
+audio-test-harness generate sine --freq 440 --duration 2.0 --output test.wav
 
-# Build and bundle plugins
-cargo xtask bundle
+# White noise (test noise gates, compression)
+audio-test-harness generate noise --duration 2.0 --output noise.wav
 
-# Build specific plugin
-cargo build --release -p audio-forge-gain
+# Impulse response (measure plugin latency/response)
+audio-test-harness generate impulse --output impulse.wav
 
-# Run tests
-cargo test
-
-# Run clippy
-cargo clippy
+# MIDI progressions (test MIDI processors)
+audio-test-harness generate midi \
+  --chords "C,F,G,C" \
+  --tempo 100 \
+  --beats 4 \
+  --output progression.mid
 ```
 
-## Creating a New Plugin
+**Analyze Audio:**
+```bash
+# Basic statistics
+audio-test-harness analyze -i input.wav stats
+# Output: Sample rate, RMS, peak, crest factor
 
-### Method 1: Manual creation
+# Frequency spectrum (FFT)
+audio-test-harness analyze -i input.wav spectrum
+# Output: Top 5 dominant frequencies
 
-1. Create a new directory in `plugins/`:
+# Timing analysis (MIDI processor output)
+audio-test-harness analyze -i input.wav timing
+# Output: Note onsets, intervals, estimated BPM
+
+# Dynamics analysis
+audio-test-harness analyze -i input.wav dynamics
+# Output: Envelope peaks, dynamic range
+```
+
+### Test Suite (`tools/test-plugins.sh`)
+
+Automated test file generation:
+- ✅ Sine waves at 110, 220, 440 Hz
+- ✅ White noise and impulse responses
+- ✅ MIDI progressions at 80, 100, 120 BPM
+- ✅ Complex chord progressions (C-Am-F-G)
+
+All files saved to `/tmp/audio-forge-tests/`
+
+## Development Workflows
+
+### MIDI Processor Plugins
+
+**Example: Low Rider (Bass Generator)**
+
+1. **Change timing code**
+   ```rust
+   BassStyle::Walking => 1.0,  // Quarter notes
+   ```
+
+2. **Build**
    ```bash
-   mkdir -p plugins/my-plugin/src
+   cargo xtask bundle audio-forge-low-rider --release
    ```
 
-2. Create `plugins/my-plugin/Cargo.toml`:
-   ```toml
-   [package]
-   name = "audio-forge-my-plugin"
-   version.workspace = true
-   edition.workspace = true
-   authors.workspace = true
-   license.workspace = true
+3. **Test in DAW**
+   - Load Low Rider plugin
+   - Import `/tmp/audio-forge-tests/progression_100bpm.mid`
+   - Route to Scarbee Rick Bass
+   - Play and LISTEN - does it feel like 100 BPM?
 
-   [lib]
-   crate-type = ["cdylib"]
-
-   [dependencies]
-   nih_plug = { workspace = true }
-   nih_plug_vizia = { workspace = true }
+4. **Render and analyze**
+   ```bash
+   # Render in DAW to /tmp/bass_test.wav
+   audio-test-harness analyze -i /tmp/bass_test.wav timing
    ```
 
-3. Copy and modify `plugins/gain/src/lib.rs` as your starting point
+5. **Verify results**
+   ```
+   Expected for Walking bass at 100 BPM:
+   - Average interval: ~0.6 seconds (quarter notes)
+   - Estimated tempo: 95-105 BPM
+   - Regular note spacing
+   ```
 
-4. The plugin will automatically be included in the workspace
+### Audio Effect Plugins
 
-### Method 2: Copy the gain example
+**Example: Tube Screamer (Overdrive)**
 
+1. **Change gain/EQ code**
+   ```rust
+   let drive_amount = params.drive.value();
+   ```
+
+2. **Build**
+   ```bash
+   cargo xtask bundle audio-forge-tubescreamer --release
+   ```
+
+3. **Test in DAW**
+   - Load Tube Screamer
+   - Import `/tmp/audio-forge-tests/sine_440hz.wav`
+   - Process and LISTEN
+
+4. **Render and analyze**
+   ```bash
+   # Process clean → /tmp/driven.wav
+   audio-test-harness analyze -i /tmp/audio-forge-tests/sine_440hz.wav spectrum
+   audio-test-harness analyze -i /tmp/driven.wav spectrum
+   ```
+
+5. **Verify results**
+   ```
+   Expected for overdrive:
+   - More harmonic content (880 Hz, 1320 Hz, 1760 Hz)
+   - Higher RMS level
+   - Compressed dynamics (lower crest factor)
+   ```
+
+## Why This Matters
+
+### The Problem We Solved
+
+Initially, plugins had **severe timing issues**:
+- Bass was playing at 16th note speed (insane!)
+- Banjo was playing bluegrass rolls instead of sparse alt-country
+- Guitar strums were 20ms (unrealistically fast)
+
+**Root cause:** No way to hear plugins during development.
+
+### The Solution
+
+1. **Test Harness** - Generate audio and MIDI programmatically
+2. **Analysis Tools** - Measure timing, frequency, dynamics
+3. **Automated Suite** - One command generates everything
+4. **Documentation** - Clear workflows for each plugin type
+
+Now we have a **complete feedback loop**:
+- ✅ Hear the plugin (DAW testing)
+- ✅ Measure the output (timing analysis)
+- ✅ Verify correctness (automated checks)
+- ✅ Iterate quickly (one command rebuild)
+
+## Best Practices
+
+### Before Pushing Code
+
+1. ✅ Run test suite: `./tools/test-plugins.sh`
+2. ✅ Build plugin: `cargo xtask bundle <plugin> --release`
+3. ✅ Load in DAW with appropriate test file
+4. ✅ **LISTEN** - Does it sound right?
+5. ✅ Render output audio
+6. ✅ Analyze with test harness
+7. ✅ Verify timing/frequency/dynamics match expectations
+8. ✅ Document any new parameters or features
+
+### Timing Verification Checklist
+
+For MIDI processors at 100 BPM:
+
+| Duration | Beats | Seconds | Check |
+|----------|-------|---------|-------|
+| Whole note | 4.0 | 2.4s | ⏱️ Sparse bass roots |
+| Half note | 2.0 | 1.2s | ⏱️ Sparse patterns |
+| Quarter note | 1.0 | 0.6s | ⏱️ Walking bass |
+| Eighth note | 0.5 | 0.3s | ⏱️ Busy patterns |
+
+**If timing < 0.5 beats, it's probably too fast for alt-country!**
+
+### Audio Quality Checklist
+
+For audio effects:
+
+- ✅ No clipping (peak < 0 dBFS)
+- ✅ Appropriate RMS level (-20 to -6 dBFS for most material)
+- ✅ Expected frequency response (measure with spectrum analysis)
+- ✅ Appropriate dynamics (check crest factor)
+- ✅ No DC offset (check stats)
+
+## Future Enhancements
+
+### Automated CI/CD Testing
+
+```rust
+#[test]
+fn test_low_rider_walking_bass_timing() {
+    let midi = generate_midi("C,F,G,C", 100);
+    let plugin = load_plugin("low-rider");
+    let audio = process(plugin, midi);
+    let timing = analyze_timing(audio);
+    
+    assert!(timing.avg_interval >= 0.55 && timing.avg_interval <= 0.65);
+    assert!(timing.estimated_bpm >= 95.0 && timing.estimated_bpm <= 105.0);
+}
+```
+
+### Plugin Hosting
+
+Directly load and process CLAP plugins without DAW:
 ```bash
-cp -r plugins/gain plugins/my-plugin
-# Then update the Cargo.toml and lib.rs with your plugin details
+audio-test-harness test-midi \
+  --plugin target/bundled/audio-forge-low-rider.clap \
+  --midi /tmp/progression.mid \
+  --output /tmp/bass_output.wav \
+  --analyze
 ```
 
-## Building and Testing
+### Regression Testing
 
-### Debug builds (faster compilation)
+Track plugin output over time:
 ```bash
-cargo build
+audio-test-harness regression \
+  --plugin audio-forge-tubescreamer \
+  --reference tests/reference/tubescreamer_440hz.wav \
+  --tolerance 0.1
 ```
 
-### Release builds (optimized for performance)
-```bash
-cargo build --release
-```
+## Key Lessons
 
-### Bundle plugins (creates .clap and .vst3 files)
-```bash
-cargo xtask bundle
-# Outputs to: target/bundled/
-```
+1. **Always test with sound** - No exceptions
+2. **Measure objectively** - Don't trust your ears alone
+3. **Document assumptions** - What does "0.25 beats" mean?
+4. **Test at multiple tempos** - 80, 100, 120 BPM minimum
+5. **Alt-country is SLOW** - Embrace space and sparseness
 
-### Install to system
-```bash
-# macOS
-just install-mac
+---
 
-# Linux  
-just install-linux
-
-# Windows
-# Copy from target/bundled/ to:
-# %COMMONPROGRAMFILES%\VST3\
-# %COMMONPROGRAMFILES%\CLAP\
-```
-
-## Plugin Development Tips
-
-### 1. Hot Reloading
-While nih-plug doesn't support true hot reloading, you can:
-- Keep Bitwig open
-- Rebuild the plugin: `just bundle-plugin my-plugin`
-- Remove and re-add the plugin in Bitwig
-
-### 2. Debugging
-```bash
-# Build with debug symbols
-cargo build --profile profiling
-
-# Use print debugging (appears in terminal when running Bitwig from CLI)
-eprintln!("Debug: {}", value);
-
-# Or use the nih_debug_assert! macros in nih-plug
-```
-
-### 3. GUI Development
-The example uses `nih_plug_vizia`. You can also use:
-- `nih_plug_egui` - Immediate mode GUI
-- No GUI - Just parameters
-
-### 4. Testing Audio
-```bash
-# Run unit tests
-cargo test
-
-# For integration testing, use:
-# - Bitwig Studio
-# - REAPER (with great CLAP support)
-# - Standalone validators like pluginval
-```
-
-## Workspace Configuration
-
-### Shared Dependencies
-Common dependencies are defined in the root `Cargo.toml`:
-- `nih_plug` - Core plugin framework
-- `nih_plug_vizia` - GUI framework
-- `nih_plug_egui` - Alternative GUI framework
-
-To use in a plugin:
-```toml
-[dependencies]
-nih_plug = { workspace = true }
-```
-
-### Build Profiles
-- `release` - Optimized builds with LTO
-- `profiling` - Release build with debug symbols
-
-## Common Commands Reference
-
-| Task | Just | Cargo |
-|------|------|-------|
-| Build all | `just build` | `cargo build` |
-| Bundle all | `just bundle` | `cargo xtask bundle` |
-| Bundle one | `just bundle-plugin gain` | `cargo xtask bundle-plugin gain` |
-| Test | `just test` | `cargo test` |
-| Lint | `just lint` | `cargo clippy` |
-| Format | `just fmt` | `cargo fmt` |
-| Clean | `just clean` | `cargo clean` |
-| Install | `just install-mac` | (manual copy) |
-
-## Troubleshooting
-
-### Plugin doesn't appear in Bitwig
-1. Check the bundled output exists: `ls target/bundled/`
-2. Verify plugin is copied to the correct directory
-3. Rescan plugins in Bitwig
-4. Check Bitwig's plugin blacklist
-
-### Build errors
-```bash
-# Clean and rebuild
-cargo clean
-cargo build --release
-
-# Update dependencies
-cargo update
-```
-
-### GUI issues
-- VIZIA requires specific platform libraries (see Prerequisites)
-- Check the nih-plug repository for known issues
-
-## Resources
-
-- [nih-plug documentation](https://github.com/robbert-vdh/nih-plug)
-- [nih-plug examples](https://github.com/robbert-vdh/nih-plug/tree/master/plugins)
-- [CLAP specification](https://github.com/free-audio/clap)
-- [Rust Audio Discord](https://discord.gg/rust-audio)
-
-## CI/CD
-
-The workspace is set up for easy CI/CD integration:
-
-```bash
-# Run all checks (like CI would)
-just ci
-
-# This runs:
-# - Format check
-# - Clippy linting  
-# - Tests
-```
-
-## Contributing
-
-1. Create a new branch for your plugin/feature
-2. Follow the existing code style (run `just fmt`)
-3. Ensure `just ci` passes
-4. Create a pull request
-
-## License
-
-All plugins are licensed under AGPL-3.0. See LICENSE file for details.
+**Remember: If you can't measure it, you can't optimize it.**
