@@ -24,6 +24,7 @@ Our plugins are built using:
 
 This is a monorepo containing multiple plugins:
 
+- **[Melody Maker](plugins/melody-maker/)** - **NEW!** Production-quality melody generator with multi-instance sync - generates harmonically-aware melodies for alt-country/Americana with 9 styles and global key/progression sharing
 - **[Gospel Wheels](plugins/gospel-wheels/)** - Intelligent Hammond organ processor for M-Tron Pro IV with chord analysis, voice leading, and drawbar simulation
 - **[Lonesome Picker](plugins/lonesome-picker/)** - Intelligent banjo processor for Ample Ethno Banjo with sparse atmospheric picking and drone string intelligence
 - **[Low Rider](plugins/low-rider/)** - Intelligent bass line generator for Scarbee Rickenbacker Bass with chord analysis and musical pattern generation
